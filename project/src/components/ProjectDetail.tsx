@@ -2,85 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, ArrowLeft, Share2, Download, Tag, ChevronDown, ChevronUp, Info, Sparkles, Layers, Film } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
-
-// Types pour les projets
-export type ProjectType = {
-  id: number;
-  title: string;
-  client: string;
-  category: 'film' | 'clip' | 'pub';
-  date: string;
-  role: string;
-  overview: string;
-  tools: string[];
-  team: string;
-  videoUrl: string;
-  thumbnail: string;
-  beforeAfter?: {
-    before: string;
-    after: string;
-  };
-  breakdownSlides?: {
-    image: string;
-    title: string;
-    description: string;
-  }[];
-};
-
-// Données des projets (à déplacer dans un fichier séparé plus tard)
-const projectsData: ProjectType[] = [
-  {
-    id: 1,
-    title: "Rammstein - Deutschland",
-    client: "Universal Music",
-    category: "clip",
-    date: "2023",
-    role: "VFX Supervisor",
-    overview: "Direction artistique et supervision VFX du clip emblématique de Rammstein, impliquant plus de 200 plans avec effets spéciaux, intégrations d'éléments CG et traitements visuels complexes.",
-    tools: ["Nuke", "Maya", "Houdini"],
-    team: "Équipe de 25 artistes sur 3 mois",
-    videoUrl: "https://player.vimeo.com/progressive_redirect/playback/123456789/rendition/1080p",
-    thumbnail: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae",
-    beforeAfter: {
-      before: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb",
-      after: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb"
-    },
-    breakdownSlides: [
-      {
-        image: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb",
-        title: "Plaque originale",
-        description: "Tournage en studio avec éclairage contrôlé"
-      },
-      {
-        image: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb",
-        title: "Intégration 3D",
-        description: "Ajout d'éléments CGI et effets pyrotechniques"
-      },
-      {
-        image: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb",
-        title: "Final Composite",
-        description: "Color grading et effets atmosphériques finaux"
-      }
-    ]
-  },
-  {
-    id: 2,
-    title: "Louis Vuitton x BTS",
-    client: "Louis Vuitton",
-    category: "pub",
-    date: "2022",
-    role: "Lead Compositor",
-    overview: "Campagne publicitaire de luxe, mettant en vedette le groupe BTS dans des environnements sublimés par un travail de compositing minutieux et un grading spécifique.",
-    tools: ["Nuke", "Flame"],
-    team: "Équipe de 12 artistes sur 2 semaines",
-    videoUrl: "https://player.vimeo.com/progressive_redirect/playback/123456791/rendition/1080p",
-    thumbnail: "https://images.unsplash.com/photo-1490114538077-0a7f8cb49891",
-    beforeAfter: {
-      before: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb",
-      after: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb"
-    }
-  }
-];
+import { Project, projects } from './Portfolio'; // Importation des types et données depuis Portfolio
 
 export function ProjectDetail() {
   // Router hooks
@@ -88,13 +10,13 @@ export function ProjectDetail() {
   const navigate = useNavigate();
   
   // Get project data based on ID
-  const project = projectsData.find(p => p.id === Number(id));
+  const project = projects.find(p => p.id === Number(id));
   
   // States
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeSection, setActiveSection] = useState('overview');
   const [expandedInfo, setExpandedInfo] = useState(false);
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const [currentBreakdownIndex, setCurrentBreakdownIndex] = useState(0);
   const [showTooltip, setShowTooltip] = useState(false);
   const [beforeAfterPosition, setBeforeAfterPosition] = useState(50);
   
@@ -159,21 +81,21 @@ export function ProjectDetail() {
   };
   
   // Next/previous slide handlers
-  const nextSlide = () => {
-    if (!project.breakdownSlides) return;
-    setCurrentSlide((prev) => 
-      prev === project.breakdownSlides!.length - 1 ? 0 : prev + 1
+  const nextBreakdownPlate = () => {
+    if (!project.breakdown) return;
+    setCurrentBreakdownIndex((prev) => 
+      prev === project.breakdown!.plates.length - 1 ? 0 : prev + 1
     );
   };
   
-  const prevSlide = () => {
-    if (!project.breakdownSlides) return;
-    setCurrentSlide((prev) => 
-      prev === 0 ? project.breakdownSlides!.length - 1 : prev - 1
+  const prevBreakdownPlate = () => {
+    if (!project.breakdown) return;
+    setCurrentBreakdownIndex((prev) => 
+      prev === 0 ? project.breakdown!.plates.length - 1 : prev - 1
     );
   };
   
-  // Share project handler (simulated)
+  // Share project handler
   const shareProject = () => {
     navigator.clipboard.writeText(window.location.href).catch(err => {
       console.error('Failed to copy URL:', err);
@@ -225,15 +147,15 @@ export function ProjectDetail() {
              project.category === 'clip' ? 'Clip' : 'Publicité'}
           </span>
           <h1 className="text-2xl font-bold">{project.title}</h1>
-          <p className="text-sm text-gray-300">{project.client} • {project.date}</p>
+          <p className="text-sm text-gray-300">{project.client} • {project.duration}</p>
         </div>
       </div>
       
       {/* Action buttons */}
       <div className="px-4 py-3 flex items-center justify-between border-b border-gray-800">
         <div className="flex items-center space-x-1">
-          <span className="text-sm font-medium">Role:</span> 
-          <span className="text-sm text-gray-300">{project.role}</span>
+          <span className="text-sm font-medium">Logiciels:</span> 
+          <span className="text-sm text-gray-300">{project.software.join(', ')}</span>
         </div>
         
         <div className="flex space-x-4">
@@ -243,9 +165,16 @@ export function ProjectDetail() {
           >
             <Share2 size={16} />
           </button>
-          <button className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center">
-            <Download size={16} />
-          </button>
+          {project.makingOfUrl && (
+            <a 
+              href={project.makingOfUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center"
+            >
+              <Download size={16} />
+            </a>
+          )}
         </div>
         
         {/* Share tooltip */}
@@ -278,7 +207,7 @@ export function ProjectDetail() {
           Aperçu
         </button>
         
-        {project.breakdownSlides && (
+        {project.breakdown && (
           <button
             className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors ${
               activeSection === 'breakdown' 
@@ -322,7 +251,14 @@ export function ProjectDetail() {
             >
               <div className="p-4 bg-gray-900 rounded-lg mb-4">
                 <h2 className="text-lg font-medium mb-2">Résumé du projet</h2>
-                <p className="text-gray-300 text-sm">{project.overview}</p>
+                <p className="text-gray-300 text-sm">
+                  {project.category === 'clip' ? 
+                    `Direction artistique et supervision VFX du clip ${project.title}, impliquant des effets spéciaux avancés, l'intégration d'éléments CG et un traitement visuel unique.` :
+                   project.category === 'pub' ?
+                    `Campagne publicitaire pour ${project.client}, utilisant des techniques de compositing avancées et un grade spécifique pour créer une atmosphère luxueuse et distinctive.` :
+                    `Travail d'effets visuels sur le film ${project.title}, incluant l'intégration d'éléments CGI, les extensions de décors et le color grading final.`
+                  }
+                </p>
               </div>
               
               <div className="p-4 bg-gray-900 rounded-lg mb-4">
@@ -341,7 +277,7 @@ export function ProjectDetail() {
                       <div>
                         <h3 className="text-sm text-gray-400">Outils utilisés</h3>
                         <div className="flex flex-wrap gap-2 mt-1">
-                          {project.tools.map((tool) => (
+                          {project.software.map((tool) => (
                             <span key={tool} className="px-2 py-1 bg-gray-800 rounded-full text-xs">
                               {tool}
                             </span>
@@ -349,9 +285,22 @@ export function ProjectDetail() {
                         </div>
                       </div>
                       <div>
-                        <h3 className="text-sm text-gray-400">Équipe</h3>
-                        <p className="text-sm">{project.team}</p>
+                        <h3 className="text-sm text-gray-400">Durée du projet</h3>
+                        <p className="text-sm">{project.duration}</p>
                       </div>
+                      {project.makingOfUrl && (
+                        <div>
+                          <h3 className="text-sm text-gray-400">Documentation</h3>
+                          <a 
+                            href={project.makingOfUrl}
+                            className="text-accent hover:underline text-sm"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Voir le making-of
+                          </a>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 )}
@@ -384,7 +333,7 @@ export function ProjectDetail() {
           )}
           
           {/* Breakdown section */}
-          {activeSection === 'breakdown' && project.breakdownSlides && (
+          {activeSection === 'breakdown' && project.breakdown && (
             <motion.div 
               key="breakdown"
               variants={cardVariants}
@@ -397,20 +346,20 @@ export function ProjectDetail() {
                 {/* Breakdown slider */}
                 <div className="aspect-video bg-gray-900 relative overflow-hidden">
                   <img 
-                    src={project.breakdownSlides[currentSlide].image} 
-                    alt={project.breakdownSlides[currentSlide].title}
+                    src={project.breakdown.plates[currentBreakdownIndex]}
+                    alt={`Étape ${currentBreakdownIndex + 1}`}
                     className="w-full h-full object-cover"
                   />
                   
                   {/* Navigation dots */}
                   <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-2">
-                    {project.breakdownSlides.map((_, index) => (
+                    {project.breakdown.plates.map((_, index) => (
                       <button
                         key={index}
                         className={`w-2 h-2 rounded-full ${
-                          index === currentSlide ? 'bg-accent' : 'bg-white/50'
+                          index === currentBreakdownIndex ? 'bg-accent' : 'bg-white/50'
                         }`}
-                        onClick={() => setCurrentSlide(index)}
+                        onClick={() => setCurrentBreakdownIndex(index)}
                       />
                     ))}
                   </div>
@@ -418,13 +367,13 @@ export function ProjectDetail() {
                   {/* Navigation arrows */}
                   <button 
                     className="absolute left-2 top-1/2 transform -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center"
-                    onClick={prevSlide}
+                    onClick={prevBreakdownPlate}
                   >
                     <ChevronDown className="transform rotate-90" size={20} />
                   </button>
                   <button 
                     className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center"
-                    onClick={nextSlide}
+                    onClick={nextBreakdownPlate}
                   >
                     <ChevronDown className="transform -rotate-90" size={20} />
                   </button>
@@ -433,10 +382,14 @@ export function ProjectDetail() {
                 {/* Slide info */}
                 <div className="p-4 bg-gray-900 rounded-lg">
                   <h3 className="font-medium text-lg">
-                    {project.breakdownSlides[currentSlide].title}
+                    Étape {currentBreakdownIndex + 1}
                   </h3>
                   <p className="text-gray-300 text-sm mt-1">
-                    {project.breakdownSlides[currentSlide].description}
+                    {currentBreakdownIndex === 0 
+                      ? "Plaque originale non retouchée" 
+                      : currentBreakdownIndex === 1 
+                        ? "Intégration des éléments 3D" 
+                        : "Finalisation avec color grading"}
                   </p>
                 </div>
               </div>
@@ -468,7 +421,7 @@ export function ProjectDetail() {
                     </div>
                     <div>
                       <h4 className="font-medium">Compositing</h4>
-                      <p className="text-sm text-gray-300">Intégration finale et correction de couleur</p>
+                      <p className="text-sm text-gray-300">{project.breakdown.description}</p>
                     </div>
                   </div>
                 </div>
